@@ -10,13 +10,7 @@ from jieba import posseg as pseg
 from pymysql.cursors import DictCursor
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.externals import joblib
-from flask import (
-    Blueprint, flash, g, redirect, render_template, request, session, url_for
-)
-from werkzeug.security import check_password_hash, generate_password_hash
-
-bp = Blueprint('auth', __name__)
-pattern = re.compile('[\u4e00-\u9fa5]')
+from gensim import corpora, models, similarities
 
 
 def createDataList(dataArr):
@@ -28,6 +22,12 @@ def createDataList(dataArr):
     return list(returnDataList)
 
 def setWord2Vec(vocabList, inputSet):
+    """
+    词语映射成矩阵
+    类似[(index_1,number_1),(index_2,number_2)]
+    index-----词语在整个词语去重列表（vocabList）的角标
+    number----词语出现的次数
+    """
     rNum = len(inputSet)
     cNum = len(vocabList)
     returnVec = zeros((rNum, cNum))
@@ -100,16 +100,18 @@ def get_db():
     port = 3306
     user_name = 'root'
     password = '123456'
+    db_name = 'cs'
     conn = pymysql.connect(
         host,
         user_name,
-        "123456",
-        "cs")
-
-
+        password,
+        db_name)
     return conn
 
 def get_data():
+    """
+    从数据库中加载数据
+    """
     dataSet = {"data":[],"label":[]}
     cursor = get_db().cursor(DictCursor)
     sql = "select content,label from t_txt"
@@ -120,9 +122,11 @@ def get_data():
     # print(dataSet)
     return dataSet
     pass
-from gensim import corpora, models, similarities
+
 def compute_similarity(all_articles,article):
-    # texts = [[word for word in jieba.cut(document, cut_all=True)] for document in all_articles]
+    """
+    计算文本之间的相似性
+    """
     reduced_contents = []
     for i in all_articles:
         reduced_contents.append(tokenization(i))
