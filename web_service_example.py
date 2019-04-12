@@ -97,8 +97,12 @@ def detect_faces_in_image(file_stream):
         index = 0
         results = []
         for face_distance in face_distances:
-            results.append({"score":face_distance,"path":known_face_encodings_index[index]})
-            index += 1
+            if face_distance < similar_size:
+                results.append({"score":face_distance,"path":known_face_encodings_index[index]})
+                index += 1
+            else:
+                index += 1
+                continue
         sorted_results = sorted(results, key=lambda k: k["score"])
         #print(sorted_results) 
         #return (jsonify(sorted_results))
@@ -109,6 +113,7 @@ def detect_faces_in_image(file_stream):
     else:
         return "图片中未识别到人脸"
 if __name__ == '__main__':
+    similar_size = 0.48
     known_face_encodings_index, known_face_encodings = init_data()
     app.run(host='0.0.0.0',port=5001,debug=True)
 
